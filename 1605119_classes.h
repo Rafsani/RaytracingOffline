@@ -1,5 +1,6 @@
 #include <bits/stdc++.h>
-
+#include <windows.h>
+#include <GL/glut.h>
 
 struct point
 {
@@ -104,7 +105,15 @@ class Sphere: public object
 
      void draw()
      {
-        std::cout << "sph";
+        glPushMatrix();
+        {
+
+            glTranslatef(reference_point.x,reference_point.y,reference_point.z);
+            drawSphere(radius,50,50,color[0],color[1],color[2]);
+
+        }
+        glPopMatrix();
+
 
      }
 };
@@ -130,7 +139,14 @@ class Triangle: public object
 
      void draw()
      {
-        std::cout << "tri";
+        glColor3f(color[0], color[1], color[2]);
+        glBegin(GL_TRIANGLES);
+        {
+            glVertex3f(points[0].x, points[0].y, points[0].z);
+            glVertex3f(points[1].x, points[1].y, points[1].z);
+            glVertex3f(points[2].x, points[2].y, points[2].z);
+        }
+        glEnd();
      }
 };
 
@@ -166,10 +182,101 @@ class General: public object
 
      void draw()
      {
-        std::cout << "general";
+
      }
 };
 
 
+
+
+class Floor: public object
+{
+    public:
+        point reference_point;
+        double tileWidth;
+        int no_of_tiles;
+        Floor(double floorWidth, double tilesize)
+        {
+
+            reference_point.x = -floorWidth/2;
+            reference_point.y = -floorWidth/2;
+            reference_point.z = 0;
+            tileWidth = tilesize;
+            no_of_tiles = floorWidth/tilesize;
+        }
+
+        void draw()
+        {
+            //std::cout << "floor";
+            glBegin(GL_QUADS);
+                {
+                    for (int i = 0; i < no_of_tiles; i++)
+                        for (int j = 0; j < no_of_tiles; j++)
+                        {
+                            bool c = (i + j) % 2;
+                            glColor3f(c, c, c);
+
+                            glVertex3f(reference_point.x + tileWidth * i, reference_point.y + tileWidth * j, reference_point.z);
+                            glVertex3f(reference_point.x + tileWidth * (i + 1), reference_point.y + tileWidth * j, reference_point.z);
+                            glVertex3f(reference_point.x + tileWidth * (i + 1), reference_point.y + tileWidth * (j + 1), reference_point.z);
+                            glVertex3f(reference_point.x + tileWidth * i, reference_point.y + tileWidth * (j + 1), reference_point.z);
+                        }
+                }
+                glEnd();
+        }
+};
+
+
+class LightSource {
+public:
+    point p;
+	LightSource() = default;
+    double R,G,B;
+	LightSource(double x, double y, double z)
+	{
+        p.x = x;
+        p.y = y;
+        p.z = z;
+	}
+	void set_color(double r, double g, double b)
+	{
+	    R=r;
+	    G=g;
+	    B=b;
+	}
+
+
+	void draw() {
+		glPushMatrix();
+		glTranslated(p.x, p.y, p.z);
+		drawSphere(2.0, 10, 10,R,G,B);
+		glPopMatrix();
+	}
+};
+
+point normalize_point (point arg)
+{
+    double val = sqrt(arg.x*arg.x + arg.y*arg.y + arg.z*arg.z);
+
+    point p;
+    p.x = arg.x/val;
+    p.y = arg.y/val;
+    p.z = arg.z/val;
+    return p;
+}
+
+class Ray
+{
+
+  public:
+    point start;
+    point dir_vect;
+
+    Ray(point st, point dir)
+    {
+        start = st;
+        dir_vect = normalize_point(dir);
+    }
+};
 
 

@@ -2,10 +2,11 @@
 #include<stdlib.h>
 #include<math.h>
 #include <iostream>
-#include <windows.h>
-#include <GL/glut.h>
+
+void drawSphere(double radius,int slices,int stacks,double R, double G, double B);
 #include "1605119_classes.h"
 #define pi (2*acos(0.0))
+void capture();
 using namespace std;
 
 double cameraHeight;
@@ -37,7 +38,7 @@ point pos,l,u,r;
 int recursion_level;
 int bmp_image_dim;
 vector <object*> objects;
-
+vector<LightSource> lights;
 
 
 
@@ -109,44 +110,46 @@ void drawSquare(double a)
 
 
 
-void drawSphere(double radius,int slices,int stacks,double R, double G, double B)
+extern void drawSphere(double radius,int slices,int stacks,double R, double G, double B)
 {
-	struct point points[100][100];
-	int i,j;
-	double h,r;
-	glColor3f(R,G,B);
-	//generate points
-	for(i=0;i<=stacks;i++)
-	{
-		h=radius*sin(((double)i/(double)stacks)*(pi/2));
-		r=radius*cos(((double)i/(double)stacks)*(pi/2));
-		for(j=0;j<=slices;j++)
-		{
-			points[i][j].x=r*cos(((double)j/(double)slices)*2*pi);
-			points[i][j].y=r*sin(((double)j/(double)slices)*2*pi);
-			points[i][j].z=h;
-		}
-	}
-	//draw quads using generated points
-	for(i=0;i<stacks;i++)
-	{
+    struct point points[100][100];
+    int i,j;
+    double h,r;
+    glColor3f(R,G,B);
+    //generate points
+    for(i=0; i<=stacks; i++)
+    {
+        h=radius*sin(((double)i/(double)stacks)*(pi/2));
+        r=radius*cos(((double)i/(double)stacks)*(pi/2));
+        for(j=0; j<=slices; j++)
+        {
+            points[i][j].x=r*cos(((double)j/(double)slices)*2*pi);
+            points[i][j].y=r*sin(((double)j/(double)slices)*2*pi);
+            points[i][j].z=h;
+        }
+    }
+    //draw quads using generated points
+    for(i=0; i<stacks; i++)
+    {
 
-		for(j=0;j<slices;j++)
-		{
-			glBegin(GL_QUADS);{
-			    //upper hemisphere
-				glVertex3f(points[i][j].x,points[i][j].y,points[i][j].z);
-				glVertex3f(points[i][j+1].x,points[i][j+1].y,points[i][j+1].z);
-				glVertex3f(points[i+1][j+1].x,points[i+1][j+1].y,points[i+1][j+1].z);
-				glVertex3f(points[i+1][j].x,points[i+1][j].y,points[i+1][j].z);
+        for(j=0; j<slices; j++)
+        {
+            glBegin(GL_QUADS);
+            {
+                //upper hemisphere
+                glVertex3f(points[i][j].x,points[i][j].y,points[i][j].z);
+                glVertex3f(points[i][j+1].x,points[i][j+1].y,points[i][j+1].z);
+                glVertex3f(points[i+1][j+1].x,points[i+1][j+1].y,points[i+1][j+1].z);
+                glVertex3f(points[i+1][j].x,points[i+1][j].y,points[i+1][j].z);
                 //lower hemisphere
                 glVertex3f(points[i][j].x,points[i][j].y,-points[i][j].z);
-				glVertex3f(points[i][j+1].x,points[i][j+1].y,-points[i][j+1].z);
-				glVertex3f(points[i+1][j+1].x,points[i+1][j+1].y,-points[i+1][j+1].z);
-				glVertex3f(points[i+1][j].x,points[i+1][j].y,-points[i+1][j].z);
-			}glEnd();
-		}
-	}
+                glVertex3f(points[i][j+1].x,points[i][j+1].y,-points[i][j+1].z);
+                glVertex3f(points[i+1][j+1].x,points[i+1][j+1].y,-points[i+1][j+1].z);
+                glVertex3f(points[i+1][j].x,points[i+1][j].y,-points[i+1][j].z);
+            }
+            glEnd();
+        }
+    }
 
 }
 
@@ -241,7 +244,9 @@ void keyboardListener(unsigned char key, int x,int y)
     case '6':
         TiltLeft();
         break;
-
+    case '0':
+        capture();
+        break;
 
 
     default:
@@ -339,34 +344,10 @@ void mouseListener(int button, int state, int x, int y) 	//x, y is the x-y of th
 }
 
 
-class LightSource {
-public:
-    point p;
-	LightSource() = default;
-    double R,G,B;
-	LightSource(double x, double y, double z) {
-        p.x = x;
-        p.y = y;
-        p.z = z;
-	}
-	void set_color(double r, double g, double b)
-	{
-	    R=r;
-	    G=g;
-	    B=b;
-	}
 
 
-	void draw() {
-		glPushMatrix();
-		glTranslated(p.x, p.y, p.z);
-		drawSphere(2.0, 10, 10,R,G,B);
-		glPopMatrix();
-	}
-};
 
 
-vector<LightSource> lights;
 
 void display()
 {
@@ -407,12 +388,15 @@ void display()
     drawAxes();
     drawGrid();
 
-   // glColor3f(0.1,0.2,0.2);
+    // glColor3f(0.1,0.2,0.2);
 
-    drawSphere(20,50,50,0.1,0.2,0.2);
     for(int i=0; i<lights.size(); i++)
     {
         lights[i].draw();
+    }
+    for(int o=0 ; o < objects.size() ; o++)
+    {
+        objects[o]->draw();
     }
 
 
@@ -447,7 +431,7 @@ void init()
 
     pos.x = 100;
     pos.y = 100;
-    pos.z = 0;
+    pos.z = 100;
 
     u.x = 0;
     u.y = 0;
@@ -492,7 +476,7 @@ void load_data()
 {
     ifstream file ;
 
-    file.open("D:/rafsani/Study/L4 T1/CSE 410 Graphics/RayTracing/scene.txt");
+    file.open("D:/rafsani/Study/L4 T1/CSE 410 Graphics/RayTracing/testdata.txt");
     string str;
     getline(file,str);
     recursion_level = stoi(str);
@@ -503,17 +487,20 @@ void load_data()
     int no_of_objects;
     no_of_objects = stoi(str);
     cout << no_of_objects << " " << recursion_level << " " << bmp_image_dim << endl;
+
+
+
     while(no_of_objects--)
     {
         file >> str;
         if(str == "sphere")
         {
-           double x, y, z, radius, R, G, B, ambient, diffuse, specular, reflection;
-           int shininess;
-           file >> x >> y >> z >> radius >> R >> G >> B >> ambient >> diffuse >> specular >> reflection >> shininess;
-           Sphere &sp = *new Sphere(x,y,z,radius);
-           sp.set_properties(R,G,B,ambient,diffuse,specular,reflection,shininess);
-           objects.push_back(&sp);
+            double x, y, z, radius, R, G, B, ambient, diffuse, specular, reflection;
+            int shininess;
+            file >> x >> y >> z >> radius >> R >> G >> B >> ambient >> diffuse >> specular >> reflection >> shininess;
+            Sphere &sp = *new Sphere(x,y,z,radius);
+            sp.set_properties(R,G,B,ambient,diffuse,specular,reflection,shininess);
+            objects.push_back(&sp);
         }
         else if(str == "triangle")
         {
@@ -535,50 +522,99 @@ void load_data()
             objects.push_back(&sp);
         }
     }
+
+    Floor &f = *new Floor(1000,20);
+    objects.push_back(&f);
+
     int no_of_lights;
     file >> no_of_lights;
     while(no_of_lights--)
     {
-         double x,y,z,r,g,b;
-         file >> x >> y >>z >> r >> g >> b;
-         LightSource lt(x,y,z);
-         lt.set_color(r,g,b);
-         lights.push_back(lt);
+        double x,y,z,r,g,b;
+        file >> x >> y >>z >> r >> g >> b;
+        LightSource lt(x,y,z);
+        lt.set_color(r,g,b);
+        lights.push_back(lt);
     }
 
-    for(int o=0 ; o < objects.size() ; o++)
-    {
-        objects[o]->draw();
-    }
+
+
 }
+
+
+
+void capture()
+{
+    cout << "capturing image" << endl;
+}
+
+
+
+
+
+
+   /*
+capture()
+{
+    initialize bitmap image and set background color
+    planeDistance = (windowHeight/2.0) /tan(viewAngle/2.0)
+        topleft = eye + l*planeDistance - r*windowWidth/2 + u*windowHeight/2
+        du = windowWidth/imageWidth
+        dv = windowHeight/imageHeight
+// Choose middle of the grid cell
+        topleft = topleft + r*(0.5*du) - u*(0.5*dv)
+        int nearest;
+        double t, tMin;
+        for i=1:
+            imageWidth
+                for j=1:
+                    imageHeight
+                    calculate curPixel using topleft,r,u,i,j,du,dv
+                    cast ray from eye to (curPixel-eye) direction
+                    double *color = new double[3]
+                    for each object, o in objects
+                    t = o.intersect(ray, dummyColor, 0)
+                            update t so that it stores min +ve value
+                            save the nearest object, on
+                            tmin = on->intersect(ray, color, 1)
+                                   update image pixel (i,j)
+                                   save image
+
+ */
+
+
+
+
+
+
 
 int main(int argc, char **argv)
-{
+    {
 
-    load_data();
+        load_data();
 
-    ///  Input file reading ///
+        ///  Input file reading ///
 
 
-    glutInit(&argc,argv);
-    glutInitWindowSize(1000, 800);
-    glutInitWindowPosition(0, 0);
-    glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGB);	//Depth, Double buffer, RGB color
+        glutInit(&argc,argv);
+        glutInitWindowSize(1000, 800);
+        glutInitWindowPosition(0, 0);
+        glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGB);	//Depth, Double buffer, RGB color
 
-    glutCreateWindow("Ray tracing");
+        glutCreateWindow("Ray tracing");
 
-    init();
+        init();
 
-    glEnable(GL_DEPTH_TEST);	//enable Depth Testing
+        glEnable(GL_DEPTH_TEST);	//enable Depth Testing
 
-    glutDisplayFunc(display);	//display callback function
-    glutIdleFunc(animate);		//what you want to do in the idle time (when no drawing is occuring)
+        glutDisplayFunc(display);	//display callback function
+        glutIdleFunc(animate);		//what you want to do in the idle time (when no drawing is occuring)
 
-    glutKeyboardFunc(keyboardListener);
-    glutSpecialFunc(specialKeyListener);
-    glutMouseFunc(mouseListener);
+        glutKeyboardFunc(keyboardListener);
+        glutSpecialFunc(specialKeyListener);
+        glutMouseFunc(mouseListener);
 
-    glutMainLoop();		//The main loop of OpenGL
+        glutMainLoop();		//The main loop of OpenGL
 
-    return 0;
-}
+        return 0;
+    }
