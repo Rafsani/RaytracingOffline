@@ -476,7 +476,7 @@ void load_data()
 {
     ifstream file ;
 
-    file.open("D:/rafsani/Study/L4 T1/CSE 410 Graphics/RayTracing/testdata.txt");
+    file.open("D:/rafsani/Study/L4 T1/CSE 410 Graphics/RayTracing/scene.txt");
     string str;
     getline(file,str);
     recursion_level = stoi(str);
