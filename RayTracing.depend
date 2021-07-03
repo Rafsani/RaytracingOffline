@@ -1,9 +1,9 @@
 # depslib dependency file v1.0
-1625169659 source:d:\rafsani\study\l4 t1\cse 410 graphics\raytracing\main.cpp
+1625274262 source:d:\rafsani\study\l4 t1\cse 410 graphics\raytracing\main.cpp
 	<stdio.h>
-	<stdlib.h>
 	<math.h>
 	<iostream>
+	"bitmap_image.hpp"
 	"1605119_classes.h"
 
 1472499032 c:\program files (x86)\codeblocks\mingw\include\gl\glut.h
@@ -11,8 +11,19 @@
 	<GL/gl.h>
 	<GL/glu.h>
 
-1625178532 d:\rafsani\study\l4 t1\cse 410 graphics\raytracing\1605119_classes.h
+1625281608 d:\rafsani\study\l4 t1\cse 410 graphics\raytracing\1605119_classes.h
 	<bits/stdc++.h>
 	<windows.h>
 	<GL/glut.h>
+	<stdlib.h>
+
+1492200750 d:\rafsani\study\l4 t1\cse 410 graphics\raytracing\bitmap_image.hpp
+	<algorithm>
+	<cmath>
+	<cstdlib>
+	<fstream>
+	<iostream>
+	<iterator>
+	<limits>
+	<string>
 

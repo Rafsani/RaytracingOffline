@@ -1,8 +1,10 @@
 #include<stdio.h>
-#include<stdlib.h>
+
 #include<math.h>
 #include <iostream>
-
+#include "bitmap_image.hpp"
+#define WINDOW_HEIGHT 768
+#define WINDOW_WIDTH 768
 void drawSphere(double radius,int slices,int stacks,double R, double G, double B);
 #include "1605119_classes.h"
 #define pi (2*acos(0.0))
@@ -11,6 +13,7 @@ using namespace std;
 
 double cameraHeight;
 double cameraAngle;
+
 int drawgrid;
 int drawaxes;
 double angle;
@@ -37,8 +40,7 @@ point pos,l,u,r;
 
 int recursion_level;
 int bmp_image_dim;
-vector <object*> objects;
-vector<LightSource> lights;
+
 
 
 
@@ -277,7 +279,7 @@ void specialKeyListener(int key, int x,int y)
         break;
 
     case GLUT_KEY_RIGHT:
-        cameraAngle += 0.03;
+       // cameraAngle += 0.03;
         pos.x+= const_K*r.x;
         pos.y+= const_K*r.y;
         pos.z+= const_K*r.z;
@@ -285,7 +287,7 @@ void specialKeyListener(int key, int x,int y)
 
         break;
     case GLUT_KEY_LEFT:
-        cameraAngle -= 0.03;
+      //  cameraAngle -= 0.03;
         pos.x-= const_K*r.x;
         pos.y-= const_K*r.y;
         pos.z-= const_K*r.z;
@@ -390,6 +392,8 @@ void display()
 
     // glColor3f(0.1,0.2,0.2);
 
+
+
     for(int i=0; i<lights.size(); i++)
     {
         lights[i].draw();
@@ -429,9 +433,9 @@ void init()
 
     // initializing camera position
 
-    pos.x = 100;
-    pos.y = 100;
-    pos.z = 100;
+    pos.x = 150;
+    pos.y = 150;
+    pos.z = 50;
 
     u.x = 0;
     u.y = 0;
@@ -461,7 +465,7 @@ void init()
     glLoadIdentity();
 
     //give PERSPECTIVE parameters
-    gluPerspective(100,	1,	1,	1000.0);
+    gluPerspective(90,	1,	1,	1000.0);
     //field of view in the Y (vertically)
     //aspect ratio that determines the field of view in the X direction (horizontally)
     //near distance
@@ -476,7 +480,7 @@ void load_data()
 {
     ifstream file ;
 
-    file.open("D:/rafsani/Study/L4 T1/CSE 410 Graphics/RayTracing/scene.txt");
+    file.open("D:/rafsani/Study/L4 T1/CSE 410 Graphics/RayTracing/testdata.txt");
     string str;
     getline(file,str);
     recursion_level = stoi(str);
@@ -523,8 +527,8 @@ void load_data()
         }
     }
 
-    Floor &f = *new Floor(1000,20);
-    objects.push_back(&f);
+   // Floor &f = *new Floor(1000,20);
+  //  objects.push_back(&f);
 
     int no_of_lights;
     file >> no_of_lights;
@@ -542,10 +546,91 @@ void load_data()
 }
 
 
+vector <double> get_nearest_intersectingObj(Ray &ray)
+{
+    int nearest = -1;
+    double t_min = 99999999;
+  //  cout << objects.size();
+    for (int i = 0; i < objects.size(); i++)
+    {
+        double t = objects[i]->getTvalue(ray);
+
+        if (t <= 0)
+        {
+            continue;
+        }
+        else if (t < t_min)
+        {
+            t_min = t;
+            nearest = i;
+        }
+    }
+    vector<double>ret ;
+    ret.push_back(nearest);
+    ret.push_back(t_min);
+
+
+    return ret;
+
+}
 
 void capture()
 {
     cout << "capturing image" << endl;
+
+    pixelColor **colorbuffer;
+    colorbuffer = new pixelColor* [bmp_image_dim];
+    for(int i=0; i<bmp_image_dim; i++)
+    {
+        colorbuffer[i] = new pixelColor[bmp_image_dim];
+    }
+
+    double plane_distance = (WINDOW_HEIGHT/2.0)/tan(cameraAngle*1.0/2) ;
+    // double plane_distance = (WINDOW_HEIGHT/2)/tan((90/2.0) * (pi / 180.0)) ;
+    point topleft = pos + (l * plane_distance - r*(WINDOW_WIDTH/2.0) + u * (WINDOW_HEIGHT/2.0) );
+
+    double du = (WINDOW_WIDTH *1.0 ) /bmp_image_dim;
+    double dv = (WINDOW_HEIGHT *1.0 ) /bmp_image_dim;
+    topleft = topleft + r*(0.5*du) - u*(0.5*dv) ;
+
+
+    for(int i=0; i<bmp_image_dim; i++)
+    {
+        for(int j=0; j<bmp_image_dim; j++)
+        {
+
+            point currPixeldirection = topleft + r*(i*du) - u*(j*dv);
+            Ray ray(pos,currPixeldirection - pos);
+            pixelColor p;
+            p.set_color(0.0,0.0,0.0);
+
+
+            vector<double> nearObj = get_nearest_intersectingObj(ray);
+            if(nearObj[0] != -1)       /// intersected an object
+            {
+                int nearest = nearObj[0];
+                objects[nearest]->intersect_method(ray,nearObj[1],p,1);
+                //cout << i << j  << endl;
+            }
+
+            colorbuffer[i][j].R = p.R;
+            colorbuffer[i][j].G = p.G;
+            colorbuffer[i][j].B = p.B;
+
+        }
+    }
+
+    bitmap_image img(bmp_image_dim,bmp_image_dim);
+    for(int i=0; i<bmp_image_dim; i++)
+    {
+        for(int j=0; j<bmp_image_dim; j++)
+        {
+            img.set_pixel(i,j,colorbuffer[i][j].R*255,colorbuffer[i][j].G*255,colorbuffer[i][j].B*255);
+        }
+    }
+
+    img.save_image("D:/rafsani/Study/L4 T1/CSE 410 Graphics/RayTracing/out.bmp");
+    cout << "image saved" << endl;
 }
 
 
@@ -597,7 +682,7 @@ int main(int argc, char **argv)
 
 
         glutInit(&argc,argv);
-        glutInitWindowSize(1000, 800);
+        glutInitWindowSize(WINDOW_HEIGHT, WINDOW_WIDTH);
         glutInitWindowPosition(0, 0);
         glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGB);	//Depth, Double buffer, RGB color
 
